@@ -102,7 +102,7 @@ func NewSogen(c *Config) (*Sogen, error) {
 	if _, err := os.Stat(s.merchantBaseDir); err != nil {
 		return nil, errors.New(fmt.Sprintf("missing certificate file in directory %s", s.merchantBaseDir))
 	}
-	certFile := fmt.Sprintf("%s.fr.%s.php", s.certificatePrefix, c.MerchantId)
+	certFile := fmt.Sprintf("%s.%s.%s.php", s.certificatePrefix, c.MerchantCountry, c.MerchantId)
 	if _, err := os.Stat(certFile); err != nil {
 		return nil, errors.New(fmt.Sprintf("missing certificate file %s", certFile))
 	}
