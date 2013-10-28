@@ -1,9 +1,8 @@
-package main
+package sogenactif
 
 import (
 	"errors"
 	"fmt"
-	"github.com/matm/sogenactif"
 	"github.com/outofpluto/goconfig/config"
 	"net/url"
 	"os"
@@ -52,10 +51,31 @@ func handleQuery(uri *url.URL) (*url.URL, error) {
 // The reflect package is not used here since we cannot
 // set a private field (not exported) within a struct using
 // reflection.
-func handleEnvVars(c *sogenactif.Config) error {
+func handleEnvVars(c *Config) error {
 	if c == nil {
 		return errors.New("handleEnvVars: nil config")
 	}
+	// logo_path
+	r, err := replaceEnvVars(c.LogoPath)
+	if err != nil {
+		return err
+	}
+	c.LogoPath = r
+
+	// merchants_rootdir
+	r, err = replaceEnvVars(c.MerchantsRootDir)
+	if err != nil {
+		return err
+	}
+	c.MerchantsRootDir = r
+
+	// media_path
+	r, err = replaceEnvVars(c.MediaPath)
+	if err != nil {
+		return err
+	}
+	c.MediaPath = r
+
 	// cancel_url
 	if c.CancelUrl != nil {
 		curi, err := handleQuery(c.CancelUrl)
@@ -78,8 +98,8 @@ func handleEnvVars(c *sogenactif.Config) error {
 
 // LoadConfig parses a config file and sets config settings
 // variables to be used at runtime.
-func LoadConfig(path string) (*sogenactif.Config, error) {
-	settings := &sogenactif.Config{}
+func LoadConfig(path string) (*Config, error) {
+	settings := &Config{}
 
 	c, err := config.ReadDefault(path)
 	if err != nil {

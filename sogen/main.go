@@ -14,7 +14,7 @@ const (
 
 func main() {
 	// TODO: read this from a config file
-	conf, err := LoadConfig("config/demo.cfg")
+	conf, err := sogenactif.LoadConfig("conf/demo.cfg")
 	if err != nil {
 		log.Fatal("config file error: " + err.Error())
 	}
