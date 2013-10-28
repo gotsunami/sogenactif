@@ -1,20 +1,29 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/matm/sogenactif"
 	"log"
 	"net/http"
-)
-
-const (
-	port   = "6060"
-	amount = 1.00
+	"os"
 )
 
 func main() {
-	// TODO: read this from a config file
-	conf, err := sogenactif.LoadConfig("conf/demo.cfg")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("Usage: %s [options] settings.conf \n", os.Args[0]))
+		fmt.Fprintf(os.Stderr, "\nOptions:\n")
+		flag.PrintDefaults()
+		os.Exit(2)
+	}
+	port := flag.String("p", "6060", "http server listening port")
+	amount := flag.Float64("t", 1.00, "transaction amount")
+	flag.Parse()
+	if len(flag.Args()) != 1 {
+		flag.Usage()
+	}
+
+	conf, err := sogenactif.LoadConfig(flag.Arg(0))
 	if err != nil {
 		log.Fatal("config file error: " + err.Error())
 	}
@@ -22,11 +31,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Starting server on port %s ...\n", port)
+	fmt.Printf("Starting server on port %s ...\n", *port)
 	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(conf.MediaPath))))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		t := sogenactif.NewTransaction(&sogenactif.Buyer{}, amount)
+		t := sogenactif.NewTransaction(&sogenactif.Buyer{}, *amount)
 		sogen.Checkout(t, w)
 	})
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }

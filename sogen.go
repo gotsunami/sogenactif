@@ -48,7 +48,7 @@ type Buyer struct {
 
 type Transaction struct {
 	buyer  *Buyer
-	amount float32
+	amount float64
 }
 
 func (s *Sogen) requestParams(t *Transaction) []string {
@@ -66,7 +66,7 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 	return plist
 }
 
-func NewTransaction(c *Buyer, amount float32) *Transaction {
+func NewTransaction(c *Buyer, amount float64) *Transaction {
 	if c == nil {
 		return nil
 	}
