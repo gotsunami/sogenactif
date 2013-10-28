@@ -5,7 +5,6 @@ import (
 	"github.com/matm/sogenactif"
 	"log"
 	"net/http"
-	"net/url"
 )
 
 const (
@@ -15,18 +14,9 @@ const (
 
 func main() {
 	// TODO: read this from a config file
-	cUrl, _ := url.Parse("http://localhost:6060/sogen/cancel")
-	rUrl, _ := url.Parse("http://localhost:6060/sogen/return")
-	conf := &sogenactif.Config{
-		Debug:                false,
-		MerchantId:           "014213245611111",
-		MerchantsRootDir:     "./merchant",
-		MerchantCountry:      "fr",
-		MerchantCurrencyCode: "978",
-		MediaPath:            "./media",
-		LogoPath:             "/media/",
-		CancelUrl:            cUrl,
-		ReturnUrl:            rUrl,
+	conf, err := LoadConfig("config/demo.cfg")
+	if err != nil {
+		log.Fatal("config file error: " + err.Error())
 	}
 	sogen, err := sogenactif.NewSogen(conf)
 	if err != nil {

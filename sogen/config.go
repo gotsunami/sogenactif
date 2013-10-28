@@ -86,6 +86,55 @@ func LoadConfig(path string) (*sogenactif.Config, error) {
 		return nil, err
 	}
 
+	// debug
+	var b bool
+	if b, err = c.Bool("sogenactif", "debug"); err != nil {
+		return nil, err
+	}
+	settings.Debug = b
+
+	// logo_path
+	var logPath string
+	if logPath, err = c.String("sogenactif", "logo_path"); err != nil {
+		return nil, err
+	}
+	settings.LogoPath = logPath
+
+	// merchants_rootdir
+	var mRootDir string
+	if mRootDir, err = c.String("sogenactif", "merchants_rootdir"); err != nil {
+		return nil, err
+	}
+	settings.MerchantsRootDir = mRootDir
+
+	// media_path
+	var mediaPath string
+	if mediaPath, err = c.String("sogenactif", "media_path"); err != nil {
+		return nil, err
+	}
+	settings.MediaPath = mediaPath
+
+	// merchant_id
+	var merchantId string
+	if merchantId, err = c.String("sogenactif", "merchant_id"); err != nil {
+		return nil, err
+	}
+	settings.MerchantId = merchantId
+
+	// merchant_country
+	var merchantCountry string
+	if merchantCountry, err = c.String("sogenactif", "merchant_country"); err != nil {
+		return nil, err
+	}
+	settings.MerchantCountry = merchantCountry
+
+	// merchant_currency_code
+	var merchantCurrencyCode string
+	if merchantCurrencyCode, err = c.String("sogenactif", "merchant_currency_code"); err != nil {
+		return nil, err
+	}
+	settings.MerchantCurrencyCode = merchantCurrencyCode
+
 	// cancel_url
 	var cUrl *url.URL
 	var uri string
