@@ -1,2 +1,4 @@
 *.swp
 sogen/sogen
+parcom.*
+pathfile
