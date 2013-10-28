@@ -20,17 +20,19 @@ const (
 	binPath = "../lib"
 )
 
+// Sogen holds information for the Sogenactif platform.
 type Sogen struct {
+	config               *Config // Config file
 	requestFile          string  // Path to request (proprietary) binary
 	responseFile         string  // Path to response (proprietary) binary
 	merchantBaseDir      string  // maps to merchant/marchant_id
-	config               *Config // Config file
 	certificatePrefix    string  // Merchant certificate prefix
 	parametersPrefix     string  // Merchant parameters file prefix
 	parametersSogenActif string  // Merchant parameters file sogenactif
-	pathFile             string
+	pathFile             string  // pathfile name
 }
 
+// Config holds attributes required by the platform.
 type Config struct {
 	Debug                bool
 	LogoPath             string
@@ -112,13 +114,17 @@ func NewSogen(c *Config) (*Sogen, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = f.Write([]byte(fmt.Sprintf(`DEBUG!NO!
+	debug := "NO"
+	if s.config.Debug {
+		debug = "YES"
+	}
+	_, err = f.Write([]byte(fmt.Sprintf(`DEBUG!%s!
 D_LOGO!%s!
 F_CERTIFICATE!%s!
 F_CTYPE!php!
 F_PARAM!%s!
 F_DEFAULT!%s!
-`, s.config.LogoPath, s.certificatePrefix, s.parametersPrefix, s.parametersSogenActif)))
+`, debug, s.config.LogoPath, s.certificatePrefix, s.parametersPrefix, s.parametersSogenActif)))
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +192,8 @@ func (s *Sogen) Checkout(t *Transaction, w io.Writer) {
 		fmt.Fprintf(w, "error using API: %s", err)
 	} else {
 		// No error
+		// Display debug info if DEBUG set to YES
+		fmt.Fprintf(w, err)
 		fmt.Fprintf(w, body)
 	}
 	fmt.Fprintf(w, "</body></html>")
