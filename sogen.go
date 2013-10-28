@@ -45,12 +45,18 @@ type Config struct {
 	ReturnUrl            *url.URL
 }
 
-type Buyer struct {
+// Customer defines some attributes that can be transmitted to the
+// payment server.
+type Customer struct {
+	// Unique customer ID. If defined, it will be passed to
+	// the sogen payment server and transmitted back after a
+	// successful or cancelled payment.
+	Id string
 }
 
 type Transaction struct {
-	buyer  *Buyer
-	amount float64
+	customer *Customer
+	amount   float64
 }
 
 func (s *Sogen) requestParams(t *Transaction) []string {
@@ -61,6 +67,9 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 		"currency_code":    s.config.MerchantCurrencyCode,
 		"pathfile":         s.pathFile,
 	}
+	if t.customer.Id != "" {
+		params["customer_id"] = t.customer.Id
+	}
 	plist := make([]string, 0)
 	for k, v := range params {
 		plist = append(plist, fmt.Sprintf("%s=%s", k, v))
@@ -68,11 +77,14 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 	return plist
 }
 
-func NewTransaction(c *Buyer, amount float64) *Transaction {
-	if c == nil {
+// NewTransaction creates a new transaction for a customer that can be
+// used to checkout. A nil customer or a null amount returns a nil
+// transaction.
+func NewTransaction(c *Customer, amount float64) *Transaction {
+	if c == nil || amount == 0 {
 		return nil
 	}
-	return &Transaction{buyer: c, amount: amount}
+	return &Transaction{customer: c, amount: amount}
 }
 
 // NewSogen sets up all the files required by the Sogen API for
@@ -90,6 +102,7 @@ func NewSogen(c *Config) (*Sogen, error) {
 		return nil, errors.New("missing merchant root directory (for config files and certificates)")
 	}
 
+	log.Printf("Initializing the Sogenactif payment system (%s)", c.MerchantId)
 	s := new(Sogen)
 	s.config = c
 	s.merchantBaseDir = path.Join(c.MerchantsRootDir, c.MerchantId)
@@ -159,14 +172,14 @@ BLOCK_ORDER!1,2,3,4,5,6,7,8!
 CONDITION!SSL!
 CURRENCY!978!
 HEADER_FLAG!yes!
-LANGUAGE!fr!
+LANGUAGE!%s!
 LOGO2!sogenactif.gif!
-MERCHANT_COUNTRY!fr!
-MERCHANT_LANGUAGE!fr!
+MERCHANT_COUNTRY!%s!
+MERCHANT_LANGUAGE!%s!
 PAYMENT_MEANS!CB,2,VISA,2,MASTERCARD,2,PAYLIB,2!
 TARGET!_top!
 TEXTCOLOR!000000!
-`)))
+`, s.config.MerchantCountry, s.config.MerchantCountry, s.config.MerchantCountry)))
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +205,7 @@ func (s *Sogen) Checkout(t *Transaction, w io.Writer) {
 		fmt.Fprintf(w, "error using API: %s", err)
 	} else {
 		// No error
-		// Display debug info if DEBUG set to YES
+		// err holds debug info if DEBUG is set to YES
 		fmt.Fprintf(w, err)
 		fmt.Fprintf(w, body)
 	}
