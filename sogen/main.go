@@ -30,6 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Starting server on port %s ...\n", port)
+	http.Handle("/media/", http.FileServer(http.Dir("media/")))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		t := sogenactif.NewTransaction(&sogenactif.Buyer{}, amount)
 		sogen.Checkout(t, w)
