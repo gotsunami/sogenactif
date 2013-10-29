@@ -24,8 +24,8 @@ which has the following usage:
       -p="6060": http server listening port
       -t=1: transaction amount
   
-Run a demo
-----------
+Running a demo
+--------------
 
 You can run a demo and test a fake transaction of 5 EUR with:
 
@@ -34,7 +34,7 @@ You can run a demo and test a fake transaction of 5 EUR with:
 API doc
 -------
 
-More docs and API documentation available on godoc:
+Some docs on integrating with Go code and API documentation:
 
 http://godoc.org/github.com/matm/sogenactif
 
