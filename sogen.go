@@ -1,3 +1,54 @@
+// Copyright 2013 Mathias Monnerville. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package sogenactif provides support for the online payment solution provided
+// by la Société Générale.
+//
+// https://www.sogenactif.com/
+//
+// Load a config file with LoadConfig() then initialize the framework:
+//   conf, err := LoadConfig("conf/demo.cfg")
+//   s, err := NewSogen(conf)
+//
+// Given a <merchant_id>, a NewSogen() call will check that the merchant's certificate
+// is available in ${merchants_rootdir}/<merchant_id> (see conf/demo.cfg) and will
+// create (or overwrite) some files required by the Sogenactif plateform:
+//   certif.fr.<merchant_id>.php # Your certificate file
+//   parcom.<merchant_id>        # Generated, defines locations for cancel and return urls
+//   parcom.sogenactif           # Generated, defines some parameters for the platform
+//   pathfile                    # Generated, defines location of all files
+//
+// Now, using the API is a matter of serving content and calling Checkout() to initiate a
+// payment, then calling HandlePayment() to get results back from the payment server.
+//
+// Initiate a payment with:
+// 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+// 		t := sogenactif.NewTransaction(&sogenactif.Customer{Id: "funkyab"}, 4.99)
+// 		fmt.Fprintf(w, "<html><body>")
+// 		sogen.Checkout(t, w) // Will add credit card logos and a link to the secure payment server
+// 		fmt.Fprintf(w, "</body></html>")
+// 	})
+//
+// Handle the return_url after a successful payment (provided the user click on the "return to site"
+// button):
+// 	http.HandleFunc(conf.ReturnUrl.Path, func(w http.ResponseWriter, r *http.Request) {
+// 		fmt.Fprintf(w, "<html><body>")
+// 		fmt.Fprintf(w, "<h2>Thank you!</h2>")
+// 		p := sogen.HandlePayment(w, r)
+// 		fmt.Fprintf(w, "</body></html>")
+// 	})
+//
+// Also handle the cancel_url in case a payment is cancelled:
+// 	http.HandleFunc(conf.CancelUrl.Path, func(w http.ResponseWriter, r *http.Request) {
+// 		fmt.Fprintf(w, "<html><body>")
+// 		fmt.Fprintf(w, "<h2>The transaction has been cancelled.</h2>")
+// 		fmt.Fprintf(w, "</body></html>")
+// 	})
+//
+// Finally, serve static content (to display credit card logos etc.) with:
+//  http.Handle(conf.LogoPath, http.StripPrefix(conf.LogoPath, http.FileServer(http.Dir(conf.MediaPath))))
+//  log.Fatal(http.ListenAndServe(":6060", nil))
 package sogenactif
 
 import (
