@@ -31,11 +31,30 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(conf.MediaPath))))
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		t := sogenactif.NewTransaction(&sogenactif.Customer{Id: "Mat"}, *amount)
+		fmt.Fprintf(w, "<html><body>")
 		sogen.Checkout(t, w)
+		fmt.Fprintf(w, "</body></html>")
 	})
+	http.HandleFunc(conf.ReturnUrl.Path, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "<html><body>")
+		fmt.Fprintf(w, "<h2>Thank you!</h2>")
+		sogen.HandlePayment(w, r)
+		fmt.Fprintf(w, "<p>Try a <a href=\"/\">new transaction</a>.</p>")
+		fmt.Fprintf(w, "</body></html>")
+	})
+	http.HandleFunc(conf.CancelUrl.Path, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "<html><body>")
+		fmt.Fprintf(w, r.PostForm.Encode())
+		fmt.Fprintf(w, "<h2>The transaction has been cancelled.</h2>")
+		fmt.Fprintf(w, "<p>You can <a href=\"/\">try a new one</a>.</p>")
+		fmt.Fprintf(w, "</body></html>")
+	})
+	// Serve static content
+	http.Handle("/media/", http.StripPrefix("/media/", http.FileServer(http.Dir(conf.MediaPath))))
+
 	fmt.Printf("Starting server on port %s ...\n", *port)
 	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }

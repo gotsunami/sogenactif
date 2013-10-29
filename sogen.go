@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -16,8 +17,8 @@ import (
 )
 
 const (
-	debug   = false
-	binPath = "../lib"
+	// TODO: put libraryPath to config file
+	libraryPath = "../lib"
 )
 
 // Sogen holds information for the Sogenactif platform.
@@ -57,6 +58,32 @@ type Customer struct {
 type Transaction struct {
 	customer *Customer
 	amount   float64
+}
+
+type Payment struct {
+	MerchantId, MerchantCountry          string
+	Amount                               string
+	TransactionId                        string
+	PaymentMeans                         string
+	TransmissionDate                     string
+	PaymentTime, PaymentDate             string
+	PaymentCertificate                   string
+	AuthorizationId                      string
+	CurrencyCode                         string
+	CardNumber, CVVFlag, CVVResponseCode string
+	BankResponseCode                     string
+	ComplementaryCode, ComplementaryInfo string
+	ReturnContext                        string
+	Caddie                               string
+	ReceiptComplement                    string
+	MerchantLanguage, Language           string
+	CustomerId                           string
+	CustomerEmail, CustomerIpAddress     string
+	CaptureDay, CaptureMode              string
+	Data                                 string
+	OrderValidity                        string
+	ScoreValue, ScoreColor, ScoreInfo    string
+	ScoreThreshold, ScoreProfile         string
 }
 
 func (s *Sogen) requestParams(t *Transaction) []string {
@@ -110,7 +137,8 @@ func NewSogen(c *Config) (*Sogen, error) {
 	s.parametersPrefix = path.Join(s.merchantBaseDir, "parcom")
 	s.parametersSogenActif = path.Join(s.merchantBaseDir, "parcom.sogenactif")
 	s.pathFile = path.Join(s.merchantBaseDir, "pathfile")
-	s.requestFile = fmt.Sprintf("%s/%s_%s/request", binPath, runtime.GOOS, runtime.GOARCH)
+	s.requestFile = fmt.Sprintf("%s/%s_%s/request", libraryPath, runtime.GOOS, runtime.GOARCH)
+	s.responseFile = fmt.Sprintf("%s/%s_%s/response", libraryPath, runtime.GOOS, runtime.GOARCH)
 
 	if _, err := os.Stat(s.merchantBaseDir); err != nil {
 		return nil, errors.New(fmt.Sprintf("missing certificate file in directory %s", s.merchantBaseDir))
@@ -198,7 +226,6 @@ func (s *Sogen) Checkout(t *Transaction, w io.Writer) {
 	cmd.Run()
 	res := strings.Split(out.String(), "!")
 	code, err, body := res[1], res[2], res[3]
-	fmt.Fprintf(w, "<html><body>")
 	if code == "" && err == "" {
 		fmt.Fprintf(w, "error: request executable not found!")
 	} else if code != "0" {
@@ -209,5 +236,68 @@ func (s *Sogen) Checkout(t *Transaction, w io.Writer) {
 		fmt.Fprintf(w, err)
 		fmt.Fprintf(w, body)
 	}
-	fmt.Fprintf(w, "</body></html>")
+}
+
+// HandlePayment generates a payment from the Sogen's server
+// response.
+func (s *Sogen) HandlePayment(w io.Writer, r *http.Request) *Payment {
+	if r == nil {
+		return nil
+	}
+	data := r.PostFormValue("DATA")
+	cmd := exec.Command(s.responseFile, "pathfile="+s.pathFile, "message="+data)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Run()
+	res := strings.Split(out.String(), "!")
+	code, err := res[1], res[2]
+
+	if code == "" && err == "" {
+		fmt.Fprintf(w, "error: request executable not found!")
+	} else if code != "0" {
+		fmt.Fprintf(w, "error using API: %s", err)
+	} else {
+		// No error
+		// err holds debug info if DEBUG is set to YES
+		fmt.Fprintf(w, err)
+		v := res[3:]
+		p := Payment{
+			MerchantId:         v[0],
+			MerchantCountry:    v[1],
+			Amount:             v[2],
+			TransactionId:      v[3],
+			PaymentMeans:       v[4],
+			TransmissionDate:   v[5],
+			PaymentTime:        v[6],
+			PaymentDate:        v[7],
+			PaymentCertificate: v[8],
+			AuthorizationId:    v[9],
+			CurrencyCode:       v[10],
+			CardNumber:         v[11],
+			CVVFlag:            v[12],
+			CVVResponseCode:    v[13],
+			BankResponseCode:   v[14],
+			ComplementaryCode:  v[15],
+			ComplementaryInfo:  v[16],
+			ReturnContext:      v[17],
+			Caddie:             v[18],
+			ReceiptComplement:  v[19],
+			MerchantLanguage:   v[20],
+			Language:           v[21],
+			CustomerId:         v[22],
+			CustomerEmail:      v[23],
+			CustomerIpAddress:  v[24],
+			CaptureDay:         v[25],
+			CaptureMode:        v[26],
+			Data:               v[27],
+			OrderValidity:      v[28],
+			ScoreValue:         v[29],
+			ScoreColor:         v[30],
+			ScoreInfo:          v[31],
+			ScoreThreshold:     v[32],
+			ScoreProfile:       v[33],
+		}
+		return &p
+	}
+	return nil
 }
