@@ -382,6 +382,7 @@ func (s *Sogen) HandlePayment(w io.Writer, r *http.Request) *Payment {
 			fmt.Fprintf(w, "amount conversion error: "+err.Error())
 			return nil
 		}
+		amount /= 100
 
 		tDate, err := formatToRFC3339(v[5], "+01:00")
 		if err != nil {
