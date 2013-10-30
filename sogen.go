@@ -65,6 +65,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -111,13 +112,15 @@ type Transaction struct {
 	amount   float64
 }
 
+// Payment holds data filled (and returned) by the secure payment server.
 type Payment struct {
 	MerchantId, MerchantCountry          string
-	Amount                               string
+	Amount                               float64
 	TransactionId                        string
 	PaymentMeans                         string
-	TransmissionDate                     string
-	PaymentTime, PaymentDate             string
+	TransmissionDate                     time.Time
+	PaymentDate                          time.Time
+	ResponseCode                         string
 	PaymentCertificate                   string
 	AuthorizationId                      string
 	CurrencyCode                         string
@@ -135,6 +138,56 @@ type Payment struct {
 	OrderValidity                        string
 	ScoreValue, ScoreColor, ScoreInfo    string
 	ScoreThreshold, ScoreProfile         string
+}
+
+func (p *Payment) String() string {
+	return fmt.Sprintf(`========================================
+Merchant ID: %s
+Merchant Country: %s
+Amount: %.2f
+Transaction ID: %s
+Payment Means: %s
+----------------------------------------
+Transmission Date: %s
+Payment Date: %s
+Response Code: %s
+Payment Certificate: %s
+----------------------------------------
+Authorization ID: %s
+Currency Code: %s
+Card Number: %s
+CVV Flag: %s
+CVV Response Code: %s
+Bank Response Code: %s
+Complementary Code: %s
+Complementary Info: %s
+----------------------------------------
+Return Context: %s
+Caddie: %s
+Receipt Complement: %s
+Merchant Language: %s
+Language: %s
+----------------------------------------
+Customer ID: %s
+Customer Email: %s
+Customer IP Address: %s
+----------------------------------------
+Capture Day: %s
+Capture Mode: %s
+Data: %s
+Order Validity: %s
+----------------------------------------
+Score Value: %s
+Score Color: %s
+Score Info: %s
+Score Threshold: %s
+Score Profile: %s`,
+		p.MerchantId, p.MerchantCountry, p.Amount, p.TransactionId, p.PaymentMeans, p.TransmissionDate,
+		p.PaymentDate, p.PaymentCertificate, p.ResponseCode, p.AuthorizationId, p.CurrencyCode, p.CardNumber,
+		p.CVVFlag, p.CVVResponseCode, p.BankResponseCode, p.ComplementaryCode, p.ComplementaryInfo,
+		p.ReturnContext, p.Caddie, p.ReceiptComplement, p.MerchantLanguage, p.Language, p.CustomerId,
+		p.CustomerEmail, p.CustomerIpAddress, p.CaptureDay, p.CaptureMode, p.Data, p.OrderValidity,
+		p.ScoreValue, p.ScoreColor, p.ScoreInfo, p.ScoreThreshold, p.ScoreProfile)
 }
 
 func (s *Sogen) requestParams(t *Transaction) []string {
@@ -289,6 +342,13 @@ func (s *Sogen) Checkout(t *Transaction, w io.Writer) {
 	}
 }
 
+func formatToRFC3339(dt, offset string) (time.Time, error) {
+	format := "%s-%s-%sT%s:%s:%s" + offset
+	rfc, err := time.Parse(time.RFC3339, fmt.Sprintf(format, dt[:4], dt[4:6], dt[6:8], dt[8:10],
+		dt[10:12], dt[12:14]))
+	return rfc, err
+}
+
 // HandlePayment generates a payment from the Sogen's server
 // response.
 func (s *Sogen) HandlePayment(w io.Writer, r *http.Request) *Payment {
@@ -308,45 +368,62 @@ func (s *Sogen) HandlePayment(w io.Writer, r *http.Request) *Payment {
 	} else if code != "0" {
 		fmt.Fprintf(w, "error using API: %s", err)
 	} else {
-		// No error
 		// err holds debug info if DEBUG is set to YES
 		fmt.Fprintf(w, err)
+
 		v := res[3:]
+		amount, err := strconv.ParseFloat(v[2], 32)
+		if err != nil {
+			fmt.Fprintf(w, "amount conversion error: "+err.Error())
+			return nil
+		}
+
+		tDate, err := formatToRFC3339(v[5], "+01:00")
+		if err != nil {
+			fmt.Fprintf(w, "transmission date conversion error: "+err.Error())
+			return nil
+		}
+		pDateTime, err := formatToRFC3339(v[7]+v[6], "+01:00")
+		if err != nil {
+			fmt.Fprintf(w, "payment datetime conversion error: "+err.Error())
+			return nil
+		}
+
 		p := Payment{
 			MerchantId:         v[0],
 			MerchantCountry:    v[1],
-			Amount:             v[2],
+			Amount:             amount,
 			TransactionId:      v[3],
 			PaymentMeans:       v[4],
-			TransmissionDate:   v[5],
-			PaymentTime:        v[6],
-			PaymentDate:        v[7],
+			TransmissionDate:   tDate,
+			PaymentDate:        pDateTime,
 			PaymentCertificate: v[8],
-			AuthorizationId:    v[9],
-			CurrencyCode:       v[10],
-			CardNumber:         v[11],
-			CVVFlag:            v[12],
-			CVVResponseCode:    v[13],
-			BankResponseCode:   v[14],
-			ComplementaryCode:  v[15],
-			ComplementaryInfo:  v[16],
-			ReturnContext:      v[17],
-			Caddie:             v[18],
-			ReceiptComplement:  v[19],
-			MerchantLanguage:   v[20],
-			Language:           v[21],
-			CustomerId:         v[22],
-			CustomerEmail:      v[23],
-			CustomerIpAddress:  v[24],
-			CaptureDay:         v[25],
-			CaptureMode:        v[26],
-			Data:               v[27],
-			OrderValidity:      v[28],
-			ScoreValue:         v[29],
-			ScoreColor:         v[30],
-			ScoreInfo:          v[31],
-			ScoreThreshold:     v[32],
-			ScoreProfile:       v[33],
+			ResponseCode:       v[9],
+			AuthorizationId:    v[10],
+			CurrencyCode:       v[11],
+			CardNumber:         v[12],
+			CVVFlag:            v[13],
+			CVVResponseCode:    v[14],
+			BankResponseCode:   v[15],
+			ComplementaryCode:  v[16],
+			ComplementaryInfo:  v[17],
+			ReturnContext:      v[18],
+			Caddie:             v[19],
+			ReceiptComplement:  v[20],
+			MerchantLanguage:   v[21],
+			Language:           v[22],
+			CustomerId:         v[23],
+			CustomerEmail:      v[24],
+			CustomerIpAddress:  v[25],
+			CaptureDay:         v[26],
+			CaptureMode:        v[27],
+			Data:               v[28],
+			OrderValidity:      v[29],
+			ScoreValue:         v[30],
+			ScoreColor:         v[31],
+			ScoreInfo:          v[32],
+			ScoreThreshold:     v[33],
+			ScoreProfile:       v[34],
 		}
 		return &p
 	}
