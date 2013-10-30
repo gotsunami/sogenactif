@@ -33,7 +33,8 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		t := sogenactif.NewTransaction(&sogenactif.Customer{Id: "johndoe"}, *amount)
+		t := sogenactif.NewTransaction(&sogenactif.Customer{Id: "johndoe",
+			Caddie: "internal-transaction-666"}, *amount)
 		fmt.Fprintf(w, "<html><body>")
 		sogen.Checkout(t, w)
 		fmt.Fprintf(w, "</body></html>")

@@ -105,6 +105,9 @@ type Customer struct {
 	// the sogen payment server and transmitted back after a
 	// successful or cancelled payment.
 	Id string
+	// Caddie is a free field which is sent back unmodified after a successful
+	// payment. It can contains up to 2048 chars.
+	Caddie string
 }
 
 type Transaction struct {
@@ -190,6 +193,7 @@ Score Profile: %s`,
 		p.ScoreValue, p.ScoreColor, p.ScoreInfo, p.ScoreThreshold, p.ScoreProfile)
 }
 
+// requestParams defines some request parameters in the Checkout() process.
 func (s *Sogen) requestParams(t *Transaction) []string {
 	params := map[string]string{
 		"merchant_id":      s.config.MerchantId,
@@ -197,6 +201,7 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 		"amount":           strconv.Itoa(int(t.amount * 100)),
 		"currency_code":    s.config.MerchantCurrencyCode,
 		"pathfile":         s.pathFile,
+		"caddie":           t.customer.Caddie,
 	}
 	if t.customer.Id != "" {
 		params["customer_id"] = t.customer.Id
