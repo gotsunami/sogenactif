@@ -31,6 +31,8 @@ You can run a demo and test a fake transaction of 5 EUR with:
 
     ./sogen -t=5 conf/demo.cfg
     
+An online demo is also deployed on Heroku at http://sogenactif.herokuapp.com/
+    
 API doc
 -------
 
