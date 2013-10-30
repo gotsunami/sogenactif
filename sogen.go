@@ -68,11 +68,6 @@ import (
 	"time"
 )
 
-const (
-	// TODO: put libraryPath to config file
-	libraryPath = "../lib"
-)
-
 // Sogen holds information for the Sogenactif platform.
 type Sogen struct {
 	config               *Config // Config file
@@ -89,6 +84,7 @@ type Sogen struct {
 type Config struct {
 	Debug                bool
 	LogoPath             string
+	LibraryPath          string // Path to the provided closed-source binaries
 	MerchantsRootDir     string // maps to merchant/
 	MediaPath            string // Path to static files (credit cards logos etc.)
 	MerchantId           string // Merchant Id
@@ -239,6 +235,9 @@ func NewSogen(c *Config) (*Sogen, error) {
 	if c.MerchantsRootDir == "" {
 		return nil, errors.New("missing merchant root directory (for config files and certificates)")
 	}
+	if _, err := os.Stat(c.LibraryPath); err != nil {
+		return nil, errors.New("bad library_path: " + err.Error())
+	}
 
 	log.Printf("Initializing the Sogenactif payment system (%s)", c.MerchantId)
 	s := new(Sogen)
@@ -248,8 +247,14 @@ func NewSogen(c *Config) (*Sogen, error) {
 	s.parametersPrefix = path.Join(s.merchantBaseDir, "parcom")
 	s.parametersSogenActif = path.Join(s.merchantBaseDir, "parcom.sogenactif")
 	s.pathFile = path.Join(s.merchantBaseDir, "pathfile")
-	s.requestFile = fmt.Sprintf("%s/%s_%s/request", libraryPath, runtime.GOOS, runtime.GOARCH)
-	s.responseFile = fmt.Sprintf("%s/%s_%s/response", libraryPath, runtime.GOOS, runtime.GOARCH)
+	s.requestFile = path.Join(c.LibraryPath, runtime.GOOS+"_"+runtime.GOARCH, "request")
+	s.responseFile = path.Join(c.LibraryPath, runtime.GOOS+"_"+runtime.GOARCH, "response")
+	if _, err := os.Stat(s.requestFile); err != nil {
+		return nil, errors.New("request binary: " + err.Error())
+	}
+	if _, err := os.Stat(s.responseFile); err != nil {
+		return nil, errors.New("request binary: " + err.Error())
+	}
 
 	if _, err := os.Stat(s.merchantBaseDir); err != nil {
 		return nil, errors.New(fmt.Sprintf("missing certificate file in directory %s", s.merchantBaseDir))

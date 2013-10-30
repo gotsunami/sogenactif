@@ -66,6 +66,13 @@ func handleEnvVars(c *Config) error {
 	}
 	c.LogoPath = r
 
+	// library_path
+	r, err = replaceEnvVars(c.LibraryPath)
+	if err != nil {
+		return err
+	}
+	c.LibraryPath = r
+
 	// merchants_rootdir
 	r, err = replaceEnvVars(c.MerchantsRootDir)
 	if err != nil {
@@ -153,6 +160,13 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	settings.MerchantId = merchantId
+
+	// library_path
+	var libPath string
+	if libPath, err = c.String("sogenactif", "library_path"); err != nil {
+		return nil, err
+	}
+	settings.LibraryPath = libPath
 
 	// merchant_country
 	var merchantCountry string
