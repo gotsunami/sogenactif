@@ -94,6 +94,7 @@ type Config struct {
 	MerchantId           string // Merchant Id
 	MerchantCountry      string // Merchant country
 	MerchantCurrencyCode string // Merchant currency code
+	AutoResponseUrl      *url.URL
 	CancelUrl            *url.URL
 	ReturnUrl            *url.URL
 }
@@ -117,10 +118,11 @@ type Transaction struct {
 
 // Payment holds data filled (and returned) by the secure payment server.
 type Payment struct {
-	MerchantId, MerchantCountry          string
+	MerchantId                           string // Unique merchant's identifier (generally 0 followed by SIRET number)
+	MerchantCountry                      string // A 2-letter country code
 	Amount                               float64
 	TransactionId                        string
-	PaymentMeans                         string
+	PaymentMeans                         string // Payment mean chosen by the customer
 	TransmissionDate                     time.Time
 	PaymentDate                          time.Time
 	ResponseCode                         string
@@ -130,8 +132,8 @@ type Payment struct {
 	CardNumber, CVVFlag, CVVResponseCode string
 	BankResponseCode                     string
 	ComplementaryCode, ComplementaryInfo string
-	ReturnContext                        string
-	Caddie                               string
+	ReturnContext                        string // Customer's buying context. Sent back unmodified.
+	Caddie                               string // Free field. Sent back unmodified.
 	ReceiptComplement                    string
 	MerchantLanguage, Language           string
 	CustomerId                           string
@@ -291,6 +293,10 @@ F_DEFAULT!%s!
 CANCEL_URL!%s!
 RETURN_URL!%s!
 `, s.config.CancelUrl, s.config.ReturnUrl)))
+	// auto_response_url config parameter is optional
+	if s.config.AutoResponseUrl != nil {
+		_, err = f.Write([]byte(fmt.Sprintf("AUTO_REPONSE_URL!%s!\n", s.config.AutoResponseUrl)))
+	}
 	if err != nil {
 		return nil, err
 	}

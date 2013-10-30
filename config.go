@@ -97,6 +97,15 @@ func handleEnvVars(c *Config) error {
 		}
 		c.ReturnUrl = curi
 	}
+
+	// auto_response_url
+	if c.AutoResponseUrl != nil {
+		curi, err := handleQuery(c.AutoResponseUrl)
+		if err != nil {
+			return err
+		}
+		c.AutoResponseUrl = curi
+	}
 	return nil
 }
 
@@ -179,6 +188,15 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, errors.New(fmt.Sprint("return URL: ", err.Error()))
 	}
 	settings.ReturnUrl = cUrl
+
+	// auto_response_url (optional)
+	uri, err = c.String("sogenactif", "auto_response_url")
+	if err == nil {
+		if cUrl, err = url.Parse(uri); err != nil {
+			return nil, errors.New(fmt.Sprint("autoreponse URL: ", err.Error()))
+		}
+		settings.AutoResponseUrl = cUrl
+	}
 
 	// Looks for env variables, perform substitutions if needed
 	if err := handleEnvVars(settings); err != nil {
