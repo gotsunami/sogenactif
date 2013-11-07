@@ -105,6 +105,9 @@ type Customer struct {
 	// Caddie is a free field which is sent back unmodified after a successful
 	// payment. It can contains up to 2048 chars.
 	Caddie string
+	// CancelURL can be provided to override the cancel_url variable in the config
+	// file, on a per-customer basis.
+	CancelURL *url.URL
 }
 
 type Transaction struct {
@@ -203,6 +206,9 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 	}
 	if t.customer.Id != "" {
 		params["customer_id"] = t.customer.Id
+	}
+	if t.customer.CancelURL != nil {
+		params["cancel_return_url"] = t.customer.CancelURL.String()
 	}
 	plist := make([]string, 0)
 	for k, v := range params {
