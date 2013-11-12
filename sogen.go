@@ -93,6 +93,20 @@ type Config struct {
 	AutoResponseUrl      *url.URL
 	CancelUrl            *url.URL
 	ReturnUrl            *url.URL
+	// Custom parameters used to generate parmcom.sogenactif. Default values are
+	// provided when calling LoadConfig(). Just override some of them before calling
+	// NewSogen().
+	Advert       string // ADVERT!sg.gif!
+	BgColor      string // BGCOLOR!ffffff!
+	BlockAlign   string // BLOCK_ALIGN!center!
+	BlockOrder   string // BLOCK_ORDER!1,2,3,4,5,6,7,8!
+	Condition    string // CONDITION!SSL!
+	Currency     int    // CURRENCY!978!
+	HeaderFlag   bool   // HEADER_FLAG!yes!
+	Logo2        string // LOGO2!sogenactif.gif!
+	PaymentMeans string // PAYMENT_MEANS!CB,2,VISA,2,MASTERCARD,2,PAYLIB,2!
+	Target       string // TARGET!_top!
+	TextColor    string // TEXTCOLOR!000000!
 }
 
 // Customer defines some attributes that can be transmitted to the
@@ -325,23 +339,28 @@ RETURN_URL!%s!
 	if err != nil {
 		return nil, err
 	}
-	_, err = f.Write([]byte(fmt.Sprintf(`ADVERT!sg.gif!
-BGCOLOR!ffffff!
-BLOCK_ALIGN!center!
-BLOCK_ORDER!1,2,3,4,5,6,7,8!
-CONDITION!SSL!
-CURRENCY!978!
-HEADER_FLAG!yes!
-LANGUAGE!%s!
-LOGO2!sogenactif.gif!
-MERCHANT_COUNTRY!%s!
-MERCHANT_LANGUAGE!%s!
-PAYMENT_MEANS!CB,2,VISA,2,MASTERCARD,2,PAYLIB,2!
-TARGET!_top!
-TEXTCOLOR!000000!
-`, s.config.MerchantCountry, s.config.MerchantCountry, s.config.MerchantCountry)))
-	if err != nil {
-		return nil, err
+	mpars := map[string]string{
+		"ADVERT":        s.config.Advert,
+		"BGCOLOR":       s.config.BgColor,
+		"BLOCK_ALIGN":   s.config.BlockAlign,
+		"BLOCK_ORDER":   s.config.BlockOrder,
+		"CONDITION":     s.config.Condition,
+		"CURRENCY":      strconv.FormatInt(int64(s.config.Currency), 10),
+		"LOGO2":         s.config.Logo2,
+		"PAYMENT_MEANS": s.config.PaymentMeans,
+		"TARGET":        s.config.Target,
+		"TEXTCOLOR":     s.config.TextColor,
+	}
+	if s.config.HeaderFlag {
+		mpars["HEADER_FLAG"] = "yes"
+	} else {
+		mpars["HEADER_FLAG"] = "no"
+	}
+	for k, v := range mpars {
+		_, err = f.Write([]byte(fmt.Sprintf("%s!%s!\n", k, v)))
+		if err != nil {
+			return nil, err
+		}
 	}
 	log.Printf("Created file %s", s.parametersSogenActif)
 

@@ -117,7 +117,9 @@ func handleEnvVars(c *Config) error {
 }
 
 // LoadConfig parses a config file and sets config settings
-// variables to be used at runtime.
+// variables to be used at runtime. Default values related to
+// merchant's custom parameters are also provided but can be
+// overridden before calling NewSogen().
 func LoadConfig(path string) (*Config, error) {
 	settings := &Config{}
 
@@ -216,5 +218,19 @@ func LoadConfig(path string) (*Config, error) {
 	if err := handleEnvVars(settings); err != nil {
 		return nil, err
 	}
+
+	// Set default values for parmcom.sogenactif.
+	settings.Advert = "sg.gif"
+	settings.BgColor = "ffffff"
+	settings.BlockAlign = "center"
+	settings.BlockOrder = "1,2,3,4,5,6,7,8"
+	settings.Condition = "SSL"
+	settings.Currency = 978
+	settings.HeaderFlag = true
+	settings.Logo2 = "sogenactif.gif"
+	settings.PaymentMeans = "CB,2,VISA,2,MASTERCARD,2,PAYLIB,2"
+	settings.Target = "_top"
+	settings.TextColor = "000000"
+
 	return settings, nil
 }
