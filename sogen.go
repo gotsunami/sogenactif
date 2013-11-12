@@ -340,16 +340,19 @@ RETURN_URL!%s!
 		return nil, err
 	}
 	mpars := map[string]string{
-		"ADVERT":        s.config.Advert,
-		"BGCOLOR":       s.config.BgColor,
-		"BLOCK_ALIGN":   s.config.BlockAlign,
-		"BLOCK_ORDER":   s.config.BlockOrder,
-		"CONDITION":     s.config.Condition,
-		"CURRENCY":      strconv.FormatInt(int64(s.config.Currency), 10),
-		"LOGO2":         s.config.Logo2,
-		"PAYMENT_MEANS": s.config.PaymentMeans,
-		"TARGET":        s.config.Target,
-		"TEXTCOLOR":     s.config.TextColor,
+		"ADVERT":            s.config.Advert,
+		"BGCOLOR":           s.config.BgColor,
+		"BLOCK_ALIGN":       s.config.BlockAlign,
+		"BLOCK_ORDER":       s.config.BlockOrder,
+		"CONDITION":         s.config.Condition,
+		"CURRENCY":          strconv.FormatInt(int64(s.config.Currency), 10),
+		"LOGO2":             s.config.Logo2,
+		"PAYMENT_MEANS":     s.config.PaymentMeans,
+		"TARGET":            s.config.Target,
+		"TEXTCOLOR":         s.config.TextColor,
+		"LANGUAGE":          s.config.MerchantCountry,
+		"MERCHANT_COUNTRY":  s.config.MerchantCountry,
+		"MERCHANT_LANGUAGE": s.config.MerchantCountry,
 	}
 	if s.config.HeaderFlag {
 		mpars["HEADER_FLAG"] = "yes"
