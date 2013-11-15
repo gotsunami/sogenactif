@@ -39,13 +39,19 @@ func main() {
     <a href="https://github.com/matm/sogenactif"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
     <div style="text-align: center;"><h2>Sogenactif secure payment demo</h2></div>
         `)
-		sogen.Checkout(t, w)
+		if err := sogen.Checkout(t, w); err != nil {
+			fmt.Fprintf(w, "<b>Error:</b> "+err.Error())
+		}
+
 		fmt.Fprintf(w, "</body></html>")
 	})
 	http.HandleFunc(conf.ReturnUrl.Path, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<html><body>")
 		fmt.Fprintf(w, "<h2>Thank you!</h2>")
-		p := sogen.HandlePayment(w, r)
+		p, err := sogen.HandlePayment(w, r)
+		if err != nil {
+			fmt.Fprintf(w, "<b>Error:</b> "+err.Error())
+		}
 		fmt.Fprintf(w, "<p>Try a <a href=\"/\">new transaction</a>.</p>")
 		fmt.Fprintf(w, "</body></html>")
 		fmt.Printf("%v\n", p)
@@ -59,7 +65,10 @@ func main() {
 	if conf.AutoResponseUrl != nil {
 		http.HandleFunc(conf.AutoResponseUrl.Path, func(w http.ResponseWriter, r *http.Request) {
 			log.Println("Got autoresponse!")
-			p := sogen.HandlePayment(w, r)
+			p, err := sogen.HandlePayment(w, r)
+			if err != nil {
+				fmt.Fprintf(w, "<b>Error:</b> "+err.Error())
+			}
 			// Do post-processing stuff here...
 			fmt.Printf("%v\n", p)
 		})

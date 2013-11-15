@@ -378,24 +378,25 @@ RETURN_URL!%s!
 
 // Checkout generates an HTML form suitable to redirect the buyer
 // to the payment server.
-func (s *Sogen) Checkout(t *Transaction, w io.Writer) {
+func (s *Sogen) Checkout(t *Transaction, w io.Writer) error {
 	// Execute binary
 	cmd := exec.Command(s.requestFile, s.requestParams(t)...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	cmd.Run()
-	res := strings.Split(out.String(), "!")
-	code, err, body := res[1], res[2], res[3]
-	if code == "" && err == "" {
-		fmt.Fprintf(w, "error: request executable not found!")
-	} else if code != "0" {
-		fmt.Fprintf(w, "error using API: %s", err)
-	} else {
-		// No error
-		// err holds debug info if DEBUG is set to YES
-		fmt.Fprintf(w, err)
-		fmt.Fprintf(w, body)
+	if err := cmd.Run(); err != nil {
+		return err
 	}
+	res := strings.Split(out.String(), "!")
+	code, sogerr, body := res[1], res[2], res[3]
+	if code == "" && sogerr == "" {
+		return errors.New("error: request executable not found!")
+	} else if code != "0" {
+		return errors.New(fmt.Sprintf("error using API (error code %s)", sogerr))
+	}
+	// No error; sogerr may hold debug info if DEBUG is set to YES
+	fmt.Fprintf(w, sogerr)
+	fmt.Fprintf(w, body)
+	return nil
 }
 
 func formatToRFC3339(dt, offset string) (time.Time, error) {
@@ -407,82 +408,82 @@ func formatToRFC3339(dt, offset string) (time.Time, error) {
 
 // HandlePayment generates a payment from the Sogen's server
 // response.
-func (s *Sogen) HandlePayment(w io.Writer, r *http.Request) *Payment {
+func (s *Sogen) HandlePayment(w io.Writer, r *http.Request) (*Payment, error) {
 	if r == nil {
-		return nil
+		return nil, errors.New("can't handle payment for nil request")
 	}
 	data := r.PostFormValue("DATA")
+	if len(data) == 0 {
+		return nil, errors.New("missing sogen data in request")
+	}
 	cmd := exec.Command(s.responseFile, "pathfile="+s.pathFile, "message="+data)
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	cmd.Run()
-	res := strings.Split(out.String(), "!")
-	code, err := res[1], res[2]
-
-	if code == "" && err == "" {
-		fmt.Fprintf(w, "error: request executable not found!")
-	} else if code != "0" {
-		fmt.Fprintf(w, "error using API: %s", err)
-	} else {
-		// err holds debug info if DEBUG is set to YES
-		fmt.Fprintf(w, err)
-
-		v := res[3:]
-		amount, err := strconv.ParseFloat(v[2], 32)
-		if err != nil {
-			fmt.Fprintf(w, "amount conversion error: "+err.Error())
-			return nil
-		}
-		amount /= 100
-
-		tDate, err := formatToRFC3339(v[5], "+01:00")
-		if err != nil {
-			fmt.Fprintf(w, "transmission date conversion error: "+err.Error())
-			return nil
-		}
-		pDateTime, err := formatToRFC3339(v[7]+v[6], "+01:00")
-		if err != nil {
-			fmt.Fprintf(w, "payment datetime conversion error: "+err.Error())
-			return nil
-		}
-
-		p := Payment{
-			MerchantId:         v[0],
-			MerchantCountry:    v[1],
-			Amount:             amount,
-			TransactionId:      v[3],
-			PaymentMeans:       v[4],
-			TransmissionDate:   tDate,
-			PaymentDate:        pDateTime,
-			PaymentCertificate: v[8],
-			ResponseCode:       v[9],
-			AuthorizationId:    v[10],
-			CurrencyCode:       v[11],
-			CardNumber:         v[12],
-			CVVFlag:            v[13],
-			CVVResponseCode:    v[14],
-			BankResponseCode:   v[15],
-			ComplementaryCode:  v[16],
-			ComplementaryInfo:  v[17],
-			ReturnContext:      v[18],
-			Caddie:             v[19],
-			ReceiptComplement:  v[20],
-			MerchantLanguage:   v[21],
-			Language:           v[22],
-			CustomerId:         v[23],
-			CustomerEmail:      v[24],
-			CustomerIpAddress:  v[25],
-			CaptureDay:         v[26],
-			CaptureMode:        v[27],
-			Data:               v[28],
-			OrderValidity:      v[29],
-			ScoreValue:         v[30],
-			ScoreColor:         v[31],
-			ScoreInfo:          v[32],
-			ScoreThreshold:     v[33],
-			ScoreProfile:       v[34],
-		}
-		return &p
+	if err := cmd.Run(); err != nil {
+		return nil, err
 	}
-	return nil
+	res := strings.Split(out.String(), "!")
+	code, sogerr := res[1], res[2]
+
+	if code == "" && sogerr == "" {
+		return nil, errors.New("request executable not found!")
+	} else if code != "0" {
+		return nil, errors.New(fmt.Sprintf("error using API (error code %s)", sogerr))
+	}
+	// sogerr holds debug info if DEBUG is set to YES
+	fmt.Fprintf(w, sogerr)
+
+	v := res[3:]
+	amount, err := strconv.ParseFloat(v[2], 32)
+	if err != nil {
+		return nil, errors.New("amount conversion error: " + err.Error())
+	}
+	amount /= 100
+
+	tDate, err := formatToRFC3339(v[5], "+01:00")
+	if err != nil {
+		return nil, errors.New("transmission date conversion error: " + err.Error())
+	}
+	pDateTime, err := formatToRFC3339(v[7]+v[6], "+01:00")
+	if err != nil {
+		return nil, errors.New("payment datetime conversion error: " + err.Error())
+	}
+
+	p := Payment{
+		MerchantId:         v[0],
+		MerchantCountry:    v[1],
+		Amount:             amount,
+		TransactionId:      v[3],
+		PaymentMeans:       v[4],
+		TransmissionDate:   tDate,
+		PaymentDate:        pDateTime,
+		PaymentCertificate: v[8],
+		ResponseCode:       v[9],
+		AuthorizationId:    v[10],
+		CurrencyCode:       v[11],
+		CardNumber:         v[12],
+		CVVFlag:            v[13],
+		CVVResponseCode:    v[14],
+		BankResponseCode:   v[15],
+		ComplementaryCode:  v[16],
+		ComplementaryInfo:  v[17],
+		ReturnContext:      v[18],
+		Caddie:             v[19],
+		ReceiptComplement:  v[20],
+		MerchantLanguage:   v[21],
+		Language:           v[22],
+		CustomerId:         v[23],
+		CustomerEmail:      v[24],
+		CustomerIpAddress:  v[25],
+		CaptureDay:         v[26],
+		CaptureMode:        v[27],
+		Data:               v[28],
+		OrderValidity:      v[29],
+		ScoreValue:         v[30],
+		ScoreColor:         v[31],
+		ScoreInfo:          v[32],
+		ScoreThreshold:     v[33],
+		ScoreProfile:       v[34],
+	}
+	return &p, nil
 }
