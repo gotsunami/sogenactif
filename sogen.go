@@ -125,6 +125,9 @@ type Customer struct {
 	// ReturnUrl can be provided to override the return_url variable in the config
 	// file, on a per-customer basis.
 	ReturnUrl *url.URL
+	// AutomaticUrl can be provided to override the auto_response_url variable in the config
+	// file, on a per-customer basis.
+	AutomaticUrl *url.URL
 }
 
 type Transaction struct {
@@ -229,6 +232,9 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 	}
 	if t.customer.ReturnUrl != nil {
 		params["normal_return_url"] = t.customer.ReturnUrl.String()
+	}
+	if t.customer.AutomaticUrl != nil {
+		params["automatic_response_url"] = t.customer.AutomaticUrl.String()
 	}
 	plist := make([]string, 0)
 	for k, v := range params {
