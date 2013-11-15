@@ -326,7 +326,7 @@ RETURN_URL!%s!
 `, s.config.CancelUrl, s.config.ReturnUrl)))
 	// auto_response_url config parameter is optional
 	if s.config.AutoResponseUrl != nil {
-		_, err = f.Write([]byte(fmt.Sprintf("AUTO_REPONSE_URL!%s!\n", s.config.AutoResponseUrl)))
+		_, err = f.Write([]byte(fmt.Sprintf("AUTO_RESPONSE_URL!%s!\n", s.config.AutoResponseUrl)))
 	}
 	if err != nil {
 		return nil, err
