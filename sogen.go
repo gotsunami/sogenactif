@@ -128,6 +128,8 @@ type Customer struct {
 	// AutomaticUrl can be provided to override the auto_response_url variable in the config
 	// file, on a per-customer basis.
 	AutomaticUrl *url.URL
+	// Merchant custom data. Can be used to pass custom CSS url to the request
+	Data string
 }
 
 type Transaction struct {
@@ -235,6 +237,9 @@ func (s *Sogen) requestParams(t *Transaction) []string {
 	}
 	if t.customer.AutomaticUrl != nil {
 		params["automatic_response_url"] = t.customer.AutomaticUrl.String()
+	}
+	if t.customer.Data != "" {
+		params["data"] = t.customer.Data
 	}
 	plist := make([]string, 0)
 	for k, v := range params {
