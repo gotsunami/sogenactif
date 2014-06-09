@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/matm/sogenactif"
+	"github.com/gotsunami/sogenactif"
 	"log"
 	"net/http"
 	"os"
@@ -36,7 +36,7 @@ func main() {
 		t := sogenactif.NewTransaction(&sogenactif.Customer{Id: "johndoe",
 			Caddie: "internal-transaction-666"}, *amount)
 		fmt.Fprintf(w, `<html><body>
-    <a href="https://github.com/matm/sogenactif"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+    <a href="https://github.com/gotsunami/sogenactif"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
     <div style="text-align: center;"><h2>Sogenactif secure payment demo</h2></div>
         `)
 		if err := sogen.Checkout(t, w); err != nil {
