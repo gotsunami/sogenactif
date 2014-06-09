@@ -14,7 +14,7 @@ Installation
 
 Use the `sogen` tool to quickly test a configuration:
 
-    go get github.com/matm/sogenactif/sogen
+    go get github.com/gotsunami/sogenactif/sogen
     
 which has the following usage:
 
@@ -38,6 +38,6 @@ API doc
 
 Some docs on integrating with Go code and API documentation:
 
-http://godoc.org/github.com/matm/sogenactif
+http://godoc.org/github.com/gotsunami/sogenactif
 
 
